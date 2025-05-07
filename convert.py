@@ -5,7 +5,7 @@ from torchvision import transforms
 from PIL import Image
 
 # Load YOLOv5 model once
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='best.pt')  # Make sure 'best.pt' is in your project directory
+model = torch.load('best.pt', map_location='cpu')
 model.eval()
 
 
