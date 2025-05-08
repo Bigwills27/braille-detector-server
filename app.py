@@ -2,11 +2,10 @@ from flask import Flask, request, jsonify
 from convert import image_to_braille
 from PIL import Image
 from flask_cors import CORS
-import io
 import os
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/upload": {"origins": "*"}})  # Enable CORS for the upload route
 
 @app.route("/upload", methods=["POST"])
 def upload_image():
@@ -18,16 +17,10 @@ def upload_image():
 
     try:
         braille_text = image_to_braille(image)
-        return jsonify({"text": braille_text})  # Match the expected response format
+        return jsonify({"text": braille_text})  # Return Braille text
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 # For local development
 if __name__ == "__main__":
-    app.run(debug=True)
-
-# For production deployment on Render
-if __name__ != "__main__":
-    # Enable proper gunicorn integration
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True, port=5000)

@@ -5,15 +5,18 @@ from torchvision import transforms
 from PIL import Image
 
 # Load YOLOv5 model once
-model = torch.load('best.pt', map_location='cpu')
+model = torch.load('yolov5_braille.pt', map_location='cpu')
 model.eval()
 
+# Load Braille map
+with open("braille_map.json", "r") as f:
+    braille_map = json.load(f)
 
-def convert_to_braille_unicode(str_input: str, path: str = "./braille_map.json") -> str:
-    with open(path, "r") as fl:
-        data = json.load(fl)
+# Reverse the braille map for easy index lookup
+index_to_pattern = {i: k for i, k in enumerate(braille_map.keys())}
 
-    return data.get(str_input, "")  # Return empty string if class not found
+def convert_to_braille_unicode(str_input: str) -> str:
+    return braille_map.get(str_input, "")  # Return empty string if class not found
 
 
 def parse_xywh_and_class(boxes: torch.Tensor) -> list:
@@ -59,7 +62,7 @@ def image_to_braille(pil_image: Image.Image) -> str:
     Returns:
         str: Braille text
     """
-    img_tensor = transforms.ToTensor()(pil_image)
+    img_tensor = transforms.ToTensor()(pil_image).unsqueeze(0)  # Add batch dimension
     results = model(img_tensor)
 
     boxes = results.pred[0]
@@ -71,8 +74,9 @@ def image_to_braille(pil_image: Image.Image) -> str:
     braille_text = ""
     for line in lines:
         for box in line:
-            cls_index = str(int(box[5]))
-            braille_text += convert_to_braille_unicode(cls_index)
+            cls_index = int(box[5])  # Class index
+            dot_pattern = index_to_pattern.get(cls_index, "")
+            braille_text += convert_to_braille_unicode(dot_pattern)
         braille_text += "\n"
 
     return braille_text.strip()
